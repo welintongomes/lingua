@@ -425,6 +425,39 @@
             border: 2px solid #f56565;
         }
 
+        /* css para botão de fala */
+        .global-controls {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .global-speech-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .global-speech-btn:hover {
+            background: #45a049;
+        }
+
+        .global-speech-btn.disabled {
+            background: #f44336;
+        }
+
+        .global-speech-btn.disabled:hover {
+            background: #da190b;
+        }
+
+        #autoSpeak {
+            color: red;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -489,6 +522,11 @@
                     <div class="stat-label">Precisão</div>
                 </div>
             </div>
+            <div class="global-controls">
+                <button class="global-speech-btn" id="globalSpeechBtn" onclick="toggleGlobalSpeech()">
+                    🔊 <span id="speechStatus">Fala Ativada</span>
+                </button>
+            </div>
         </div>
 
         <div class="nav-buttons">
@@ -504,6 +542,8 @@
                         <div class="progress-fill" id="progressBar"></div>
                     </div>
                     <div class="question-text" id="questionText">Clique em "Iniciar Jogo" para começar!</div>
+                    <div class="speech-indicator" id="speechIndicator"
+                        style="font-size: 12px; color: #666; margin-top: 5px;"></div>
                 </div>
 
                 <div class="word-bank" id="wordBank"></div>
@@ -555,8 +595,34 @@
                     </select>
                     <input type="text" id="answerInput" placeholder="Digite a resposta aqui...">
 
+                </div>
+                <div class="form-group">
+                    <label for="successMessage"></label>
+                    <label for="successLanguage">(opcional) Frase de Acerto, Idioma</label>
+                    <select id="successLanguage">
+                        <option value="português">Português</option>
+                        <option value="inglês">Inglês</option>
+                        <option value="espanhol">Espanhol</option>
+                        <option value="francês">Francês</option>
+                        <option value="italiano">Italiano</option>
+                    </select>
+                    <input type="text" id="successMessage" placeholder="Ex: Parabéns! Você acertou!">
+                </div>
+                <label>
+                    <input type="checkbox" id="autoSpeak" checked> Falar áudio das frases
+                </label>
 
-
+                <div class="form-group">
+                    <label for="errorMessage"></label>
+                    <label for="errorLanguage">(opcional) Frase de Erro, Idioma</label>
+                    <select id="errorLanguage">
+                        <option value="português">Português</option>
+                        <option value="inglês">Inglês</option>
+                        <option value="espanhol">Espanhol</option>
+                        <option value="francês">Francês</option>
+                        <option value="italiano">Italiano</option>
+                    </select>
+                    <input type="text" id="errorMessage" placeholder="Ex: Errado, continue tentando!">
                 </div>
 
                 <div class="form-group">
@@ -576,9 +642,8 @@
                     <label for="lettersInput">Letras extras (opcional - separadas por vírgula):</label>
                     <textarea id="lettersInput" rows="2" placeholder="a, b, c, x, y, z, ..."></textarea>
                     <small style="color: #666; margin-top: 5px; display: block;">
-                        As letras da resposta são incluídas automaticamente. Adicione letras extras para aumentar a
-                        dificuldade.
-                    </small>
+                        Adicione letras extras para aumentar a dificuldade. Sem letras extras, apenas as letras da
+                        resposta aparecerão.</small>
                 </div>
 
                 <div class="game-buttons">
@@ -627,6 +692,33 @@
                 </select>
                 <input type="text" id="editAnswer">
             </div>
+            <div class="form-group">
+                <label for="editSuccessMessage"></label>
+                <label for="editSuccessLanguage">(opcional)Frase de Acerto, Idioma</label>
+                <select id="editSuccessLanguage">
+                    <option value="português">Português</option>
+                    <option value="inglês">Inglês</option>
+                    <option value="espanhol">Espanhol</option>
+                    <option value="francês">Francês</option>
+                    <option value="italiano">Italiano</option>
+                </select>
+                <input type="text" id="editSuccessMessage" placeholder="Ex: Parabéns! Você acertou!">
+            </div>
+            <label>
+                <input type="checkbox" id="editAutoSpeak"> Falar áudio das frases
+            </label>
+            <div class="form-group">
+                <label for="editErrorMessage"></label>
+                <label for="editErrorLanguage">(opcional)Frase de Erro, Idioma</label>
+                <select id="editErrorLanguage">
+                    <option value="português">Português</option>
+                    <option value="inglês">Inglês</option>
+                    <option value="espanhol">Espanhol</option>
+                    <option value="francês">Francês</option>
+                    <option value="italiano">Italiano</option>
+                </select>
+                <input type="text" id="editErrorMessage" placeholder="Ex: Errado, continue tentando!">
+            </div>
 
             <div class="form-group">
                 <label for="editGameType">Tipo de Jogo:</label>
@@ -643,7 +735,9 @@
 
             <div class="form-group" id="editLettersGroup" style="display: none;">
                 <label for="editLetters">Letras extras (separadas por vírgula):</label>
-                <textarea id="editLetters" rows="2"></textarea>
+                <textarea placeholder="Ex: a, b, c" id="editLetters" rows="2"></textarea>
+                Adicione letras extras para aumentar a dificuldade. Sem letras extras, apenas as letras da
+                resposta aparecerão.</small>
             </div>
 
             <div class="game-buttons">
@@ -670,7 +764,10 @@
             totalAnswered: 0
         };
         let editingIndex = -1;
+        let globalSpeechEnabled = true; // Controle global da fala
         let remainingQuestions = []; //1 Array para controlar perguntas não respondidas
+        let speechQueue = 0; // Contador de falas pendentes
+
 
         // Initialize IndexedDB
         function initDB() {
@@ -770,22 +867,54 @@
             };
         }
         // Speech Functions
-        function speakText(text, language = 'pt-BR') {
+        function speakText(text, language = 'pt-BR', callback = null) {
+            // Verificar se a fala global está ativada
+            if (!globalSpeechEnabled) {
+                if (callback) callback(); // Chama o callback mesmo se não falar
+                return;
+            }
+
             if ('speechSynthesis' in window) {
+                speechQueue++; // Incrementa contador de falas
+
                 // Para mobile, precisa ser ativado por interação do usuário
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = language;
                 utterance.rate = 0.8;
                 utterance.volume = 1.0;
 
+                // Quando terminar de falar
+                utterance.onend = function () {
+                    speechQueue--; // Decrementa contador
+                    console.log(`Fala terminada: "${text.substring(0, 30)}..." - Queue restante: ${speechQueue}`);
+                    console.log(`Texto completo falado: "${text}"`);
+                    if (callback) {
+                        setTimeout(callback, 100); // Pequeno delay para garantir
+                    }
+                };
+
+                utterance.onerror = function (event) {
+                    speechQueue--; // Decrementa contador mesmo com erro
+                    console.log(`Erro na fala: ${event.error} - Queue restante: ${speechQueue}`);
+                    if (callback) {
+                        setTimeout(callback, 100);
+                    }
+                };
+
                 // Garantir que o speechSynthesis está pronto
                 if (speechSynthesis.speaking) {
                     speechSynthesis.cancel();
+                    // Aguarda um pouco após cancelar antes de falar novamente
+                    setTimeout(() => {
+                        speechSynthesis.speak(utterance);
+                    }, 100);
+                } else {
+                    speechSynthesis.speak(utterance);
                 }
-
-                speechSynthesis.speak(utterance);
+            } else if (callback) {
+                callback(); // Chama o callback se não suportar fala
             }
-        }//1
+        }
 
         function getLanguageCode(language) {
             const languages = {
@@ -797,29 +926,59 @@
             };
             return languages[language] || 'pt-BR';
         }
+        //ativar desativar syntese global
+        function toggleGlobalSpeech() {
+            globalSpeechEnabled = !globalSpeechEnabled;
+
+            const btn = document.getElementById('globalSpeechBtn');
+            const status = document.getElementById('speechStatus');
+
+            if (globalSpeechEnabled) {
+                btn.classList.remove('disabled');
+                btn.innerHTML = '🔊 <span id="speechStatus">Fala Ativada</span>';
+                status.textContent = 'Fala Ativada';
+            } else {
+                btn.classList.add('disabled');
+                btn.innerHTML = '🔇 <span id="speechStatus">Fala Desativada</span>';
+                status.textContent = 'Fala Desativada';
+
+                // Para qualquer fala que esteja acontecendo
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+
+                }
+                speechQueue = 0; // Reseta contador quando cancela fala global
+            }
+
+            // Salvar a preferência (opcional)
+            localStorage.setItem('globalSpeechEnabled', globalSpeechEnabled);
+            updateSpeechIndicator();
+        }
         // Game Logic
-function startGame() {
-    if (questions.length === 0) {
-        alert('Adicione algumas perguntas primeiro!');
-        showAdmin();
-        return;
-    }
+        function startGame() {
+            speechQueue = 0; // Reseta contador ao iniciar nova pergunta
+            if (questions.length === 0) {
+                alert('Adicione algumas perguntas primeiro!');
+                showAdmin();
+                return;
+            }
 
-    // Se não há perguntas restantes, reiniciar com todas as perguntas
-    if (remainingQuestions.length === 0) {
-        remainingQuestions = [...questions.map((q, index) => index)]; // Cria array com índices
-        shuffleArray(remainingQuestions); // Embaralha as perguntas
-    }
+            // Se não há perguntas restantes, reiniciar com todas as perguntas
+            if (remainingQuestions.length === 0) {
+                remainingQuestions = [...questions.map((q, index) => index)]; // Cria array com índices
+                shuffleArray(remainingQuestions); // Embaralha as perguntas
+            }
 
-    // Pega a próxima pergunta da lista embaralhada
-    currentQuestionIndex = remainingQuestions.shift(); // Remove e retorna o primeiro item
-    currentQuestion = questions[currentQuestionIndex];
+            // Pega a próxima pergunta da lista embaralhada
+            currentQuestionIndex = remainingQuestions.shift(); // Remove e retorna o primeiro item
+            currentQuestion = questions[currentQuestionIndex];
 
-    displayQuestion();
-    document.getElementById('feedback').style.display = 'none';
-}//2
+            displayQuestion();
+            document.getElementById('feedback').style.display = 'none';
+        }//2
 
         function displayQuestion() {
+            speechQueue = 0; // Reseta contador ao exibir nova pergunta
             document.getElementById('questionText').textContent = currentQuestion.question;
             // Speak the question
             if (currentQuestion.questionLanguage) {
@@ -839,17 +998,8 @@ function startGame() {
                 // Add extra letters if provided
                 const extraLetters = currentQuestion.extraLetters || [];
 
-                // Combine and shuffle
+                // Combine and shuffle - APENAS letras da resposta + extras manuais
                 allItems = [...answerLetters, ...extraLetters];
-
-                // Add some random letters if we don't have enough
-                const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
-                while (allItems.length < Math.max(8, answerLetters.length + 3)) {
-                    const randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
-                    if (!allItems.includes(randomLetter)) {
-                        allItems.push(randomLetter);
-                    }
-                }
             } else {
                 // Use words as before
                 allItems = [...currentQuestion.words];
@@ -874,6 +1024,7 @@ function startGame() {
 
             // Update progress
             updateProgress();
+            updateSpeechIndicator();
         }
 
         function selectItem(item, chipElement) {
@@ -940,28 +1091,52 @@ function startGame() {
             gameStats.totalAnswered++;
 
             if (userAnswer === correctAnswer) {
-                feedbackEl.textContent = '🎉 Correto! Muito bem!';
+                const successMsg = currentQuestion.successMessage || ' Correto! Muito bem!';
+                feedbackEl.textContent = successMsg;
                 feedbackEl.className = 'feedback correct';
                 answerArea.className = 'answer-area correct';
                 gameStats.correctAnswers++;
-                vibrate([50, 100, 50]); // Success vibration pattern
-                // Speak the correct answer
-                if (currentQuestion.answerLanguage) {
+
+                // Falar a mensagem de sucesso se autoSpeak estiver ativado E fala global ativada
+                if (currentQuestion.autoSpeak !== false && globalSpeechEnabled) {
+                    const successLanguage = currentQuestion.successLanguage || 'português';
+
                     setTimeout(() => {
-                        speakText(currentQuestion.answer, getLanguageCode(currentQuestion.answerLanguage));
-                    }, 1000);
+                        // Fala a mensagem de sucesso e depois a resposta
+                        speakText(successMsg, getLanguageCode(successLanguage), () => {
+                            if (currentQuestion.answerLanguage) {
+                                setTimeout(() => {
+                                    speakText(currentQuestion.answer, getLanguageCode(currentQuestion.answerLanguage), () => {
+                                        console.log('Resposta correta falada completamente');
+                                    });
+                                }, 600); // Delay entre as falas
+                            }
+                        });
+                    }, 300);
                 }
-            } else {
-                feedbackEl.textContent = `❌ Incorreto! A resposta era: "${currentQuestion.answer}"`;
+            }
+            else {
+                const errorMsg = currentQuestion.errorMessage || 'Incorreto! A resposta era';
+                feedbackEl.textContent = `❌ ${errorMsg}: "${currentQuestion.answer}"`;
                 feedbackEl.className = 'feedback incorrect';
                 answerArea.className = 'answer-area incorrect';
-                vibrate(200); // Error vibration
 
-                // Falar a resposta correta no idioma certo
-                if (currentQuestion.answerLanguage) {
+                // Falar a mensagem de erro se autoSpeak estiver ativado E fala global ativada
+                if (currentQuestion.autoSpeak !== false && globalSpeechEnabled) {
+                    const errorLanguage = currentQuestion.errorLanguage || 'português';
+
                     setTimeout(() => {
-                        speakText(currentQuestion.answer, getLanguageCode(currentQuestion.answerLanguage));
-                    }, 1000);
+                        // Fala a mensagem de erro e depois a resposta
+                        speakText(errorMsg, getLanguageCode(errorLanguage), () => {
+                            if (currentQuestion.answerLanguage) {
+                                setTimeout(() => {
+                                    speakText(currentQuestion.answer, getLanguageCode(currentQuestion.answerLanguage), () => {
+                                        console.log('Resposta incorreta falada completamente');
+                                    });
+                                }, 300);
+                            }
+                        });
+                    }, 300);
                 }
             }
 
@@ -972,34 +1147,73 @@ function startGame() {
             saveStats();
             updateStatsDisplay();
 
-            // Auto next question after 3 seconds, ou finalizar se não houver mais
-            setTimeout(() => {
-                nextQuestion();
-            }, 3000);
+            // Determinar tempo de espera baseado nas configurações de fala
+            let waitTime = 1500; // Tempo padrão para quando não há fala
+
+            // Se há fala ativada (global E local) E tem resposta para falar
+            if (currentQuestion.autoSpeak !== false && globalSpeechEnabled && currentQuestion.answerLanguage) {
+                // Aguardar todas as falas terminarem
+                setTimeout(() => {
+                    waitForSpeechToEnd(() => {
+                        nextQuestion();
+                    });
+                }, 1500); // Tempo para garantir que as duas falas sejam iniciadas
+            } else {
+                // Se não há fala ou está desativada, avançar após tempo fixo
+                setTimeout(() => {
+                    nextQuestion();
+                }, waitTime);
+            }
+        }
+
+        function waitForSpeechToEnd(callback) {
+            console.log(`Verificando fala - Queue: ${speechQueue}, Speaking: ${speechSynthesis.speaking}`);
+
+            // Verifica se ainda há falas pendentes ou se o speechSynthesis ainda está falando
+            if (speechQueue > 0 || speechSynthesis.speaking) {
+                // Se ainda há falas pendentes, verifica novamente em 200ms
+                setTimeout(() => {
+                    waitForSpeechToEnd(callback);
+                }, 200);
+            } else {
+                // Aguarda mais tempo para garantir que todas as falas realmente terminaram
+                console.log('Falas parecem ter terminado, aguardando confirmação...');
+                setTimeout(() => {
+                    // Verifica novamente após a pausa maior
+                    if (speechQueue === 0 && !speechSynthesis.speaking) {
+                        console.log('Confirmado: todas as falas terminaram, avançando para próxima pergunta');
+                        callback();
+                    } else {
+                        console.log('Ainda há falas pendentes, continuando verificação...');
+                        // Se ainda está falando, continua verificando
+                        waitForSpeechToEnd(callback);
+                    }
+                }, 800); // Aumentou significativamente o tempo de espera
+            }
         }
 
         function nextQuestion() {//funçao para pular para proxima pergunta
-    // Verificar se ainda há perguntas restantes
-    if (remainingQuestions.length === 0) {
-        // Finalizar jogo - todas as perguntas foram respondidas
-        document.getElementById('questionText').textContent = '🎉 Parabéns! Você completou todas as perguntas!';
-        document.getElementById('wordBank').innerHTML = '';
-        document.getElementById('answerArea').innerHTML = '';
-        document.getElementById('feedback').style.display = 'none';
-        document.getElementById('checkBtn').disabled = true;
-        
-        // Mostrar opção para jogar novamente
-        setTimeout(() => {
-            if (confirm('Quer jogar novamente?')) {
-                startGame();
-            }
-        }, 2000);
-        return;
-    }
+            // Verificar se ainda há perguntas restantes
+            if (remainingQuestions.length === 0) {
+                // Finalizar jogo - todas as perguntas foram respondidas
+                document.getElementById('questionText').textContent = '🎉 Parabéns! Você completou todas as perguntas!';
+                document.getElementById('wordBank').innerHTML = '';
+                document.getElementById('answerArea').innerHTML = '';
+                document.getElementById('feedback').style.display = 'none';
+                document.getElementById('checkBtn').disabled = true;
 
-    // Continuar para próxima pergunta
-    startGame();
-}//3
+                // Mostrar opção para jogar novamente
+                setTimeout(() => {
+                    if (confirm('Quer jogar novamente?')) {
+                        startGame();
+                    }
+                }, 2000);
+                return;
+            }
+
+            // Continuar para próxima pergunta
+            startGame();
+        }//3
 
         // Admin Functions
         function toggleGameType() {
@@ -1046,6 +1260,11 @@ function startGame() {
                 type: gameType,
                 questionLanguage: document.getElementById('questionLanguage').value,
                 answerLanguage: document.getElementById('answerLanguage').value,
+                successMessage: document.getElementById('successMessage').value.trim(),
+                successLanguage: document.getElementById('successLanguage').value,
+                errorMessage: document.getElementById('errorMessage').value.trim(),
+                errorLanguage: document.getElementById('errorLanguage').value,
+                autoSpeak: document.getElementById('autoSpeak').checked
             };
 
             if (gameType === 'letters') {
@@ -1092,6 +1311,11 @@ function startGame() {
             document.getElementById('gameType').value = 'words';
             document.getElementById('questionLanguage').value = 'português';
             document.getElementById('answerLanguage').value = 'inglês';
+            document.getElementById('successMessage').value = '';
+            document.getElementById('errorMessage').value = '';
+            document.getElementById('successLanguage').value = 'português';
+            document.getElementById('errorLanguage').value = 'português';
+            document.getElementById('autoSpeak').checked = true;
             toggleGameType();
         }
 
@@ -1104,6 +1328,7 @@ function startGame() {
                 item.className = 'question-item';
 
                 const typeIcon = q.type === 'letters' ? '🔤' : '📝';
+                const autoSpeakIcon = q.autoSpeak !== false ? '🔊' : '🔇';
                 const extraInfo = q.type === 'letters' ?
                     (q.extraLetters && q.extraLetters.length > 0 ?
                         `<small><strong>Letras extras:</strong> ${q.extraLetters.join(', ')}</small>` :
@@ -1111,16 +1336,17 @@ function startGame() {
                     `<small><strong>Palavras:</strong> ${q.words.join(', ')}</small>`;
 
                 item.innerHTML = `
-                    <div class="question-content">
-                        ${typeIcon} <strong>P:</strong> ${q.question}<br>
-                        <strong>R:</strong> ${q.answer}<br>
-                        ${extraInfo}
-                    </div>
-                    <div class="question-actions">
-                        <button class="btn-small btn-edit" onclick="editQuestion(${q.id})">✏️</button>
-                        <button class="btn-small btn-delete" onclick="deleteQuestionConfirm(${q.id})">🗑️</button>
-                    </div>
-                `;
+    <div class="question-content">
+        ${typeIcon} <strong>P:</strong> ${q.question}<br>
+        <strong>R:</strong> ${q.answer}<br>
+        ${autoSpeakIcon} <strong>Fala:</strong> ${q.autoSpeak !== false ? 'Ativada' : 'Desativada'} ${!globalSpeechEnabled ? '(Global: OFF)' : ''}<br>
+        ${extraInfo}
+    </div>
+    <div class="question-actions">
+        <button class="btn-small btn-edit" onclick="editQuestion(${q.id})">✏️</button>
+        <button class="btn-small btn-delete" onclick="deleteQuestionConfirm(${q.id})">🗑️</button>
+    </div>
+`;
 
                 list.appendChild(item);
             });
@@ -1146,6 +1372,11 @@ function startGame() {
 
             document.getElementById('editModal').classList.add('active');
             document.getElementById('editQuestionLanguage').value = question.questionLanguage || 'português';
+            document.getElementById('editSuccessMessage').value = question.successMessage || '';
+            document.getElementById('editSuccessLanguage').value = question.successLanguage || 'português';
+            document.getElementById('editErrorMessage').value = question.errorMessage || '';
+            document.getElementById('editErrorLanguage').value = question.errorLanguage || 'português';
+            document.getElementById('editAutoSpeak').checked = question.autoSpeak !== false;
             document.getElementById('editAnswerLanguage').value = question.answerLanguage || 'inglês';
         }
 
@@ -1165,6 +1396,11 @@ function startGame() {
                 type: gameType,
                 questionLanguage: document.getElementById('editQuestionLanguage').value,
                 answerLanguage: document.getElementById('editAnswerLanguage').value,
+                successMessage: document.getElementById('editSuccessMessage').value.trim(),
+                successLanguage: document.getElementById('editSuccessLanguage').value,
+                errorMessage: document.getElementById('editErrorMessage').value.trim(),
+                errorLanguage: document.getElementById('editErrorLanguage').value,
+                autoSpeak: document.getElementById('editAutoSpeak').checked,
             };
 
             if (gameType === 'letters') {
@@ -1326,16 +1562,30 @@ function startGame() {
                 [array[i], array[j]] = [array[j], array[i]];
             }
         }
+        function updateSpeechIndicator() {
+            const indicator = document.getElementById('speechIndicator');
+            if (indicator) {
+                if (!globalSpeechEnabled) {
+                    indicator.textContent = '🔇 Fala global desativada';
+                    indicator.style.color = '#f44336';
+                } else if (currentQuestion && currentQuestion.autoSpeak === false) {
+                    indicator.textContent = '🔇 Fala desta pergunta desativada';
+                    indicator.style.color = '#ff9800';
+                } else {
+                    indicator.textContent = '';
+                }
+            }
 
-function updateProgress() {
-    if (questions.length === 0) return;
-    
-    const totalQuestions = questions.length;
-    const questionsAnswered = totalQuestions - remainingQuestions.length;
-    const progress = (questionsAnswered / totalQuestions) * 100;
-    
-    document.getElementById('progressBar').style.width = progress + '%';
-}//4
+        }
+        function updateProgress() {
+            if (questions.length === 0) return;
+
+            const totalQuestions = questions.length;
+            const questionsAnswered = totalQuestions - remainingQuestions.length;
+            const progress = (questionsAnswered / totalQuestions) * 100;
+
+            document.getElementById('progressBar').style.width = progress + '%';
+        }//4
 
         function updateStats() {
             gameStats.totalQuestions = questions.length;
@@ -1370,6 +1620,20 @@ function updateProgress() {
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', function () {
+            // Carregar preferência de fala global
+            const savedSpeechPref = localStorage.getItem('globalSpeechEnabled');
+            if (savedSpeechPref !== null) {
+                globalSpeechEnabled = savedSpeechPref === 'true';
+
+                // Atualizar o botão
+                const btn = document.getElementById('globalSpeechBtn');
+                const status = document.getElementById('speechStatus');
+
+                if (!globalSpeechEnabled) {
+                    btn.classList.add('disabled');
+                    btn.innerHTML = '🔇 <span id="speechStatus">Fala Desativada</span>';
+                }
+            }
             initDB();
 
             // Add some sample questions if none exist
@@ -1383,34 +1647,10 @@ function updateProgress() {
                             words: ["hello", "goodbye", "please", "thank", "you"]
                         },
                         {
-                            question: "Complete: 'The cat is ___'",
-                            answer: "sleeping",
-                            type: "words",
-                            words: ["sleeping", "running", "eating", "playing", "jumping"]
-                        },
-                        {
                             question: "Forme a palavra: 'GATO'",
                             answer: "gato",
                             type: "letters",
-                            extraLetters: ["b", "c", "d", "f", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "v", "w", "x", "y", "z"]
-                        },
-                        {
-                            question: "Forme a palavra: 'CASA'",
-                            answer: "casa",
-                            type: "letters",
-                            extraLetters: ["b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "t", "u", "v", "w", "x", "y", "z"]
-                        },
-                        {
-                            question: "Complete: 'Eu _____ estudar'",
-                            answer: "gosto de",
-                            type: "words",
-                            words: ["gosto", "de", "não", "quero", "vou"]
-                        },
-                        {
-                            question: "Forme a palavra: 'AMOR'",
-                            answer: "amor",
-                            type: "letters",
-                            extraLetters: ["b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "n", "p", "q", "s", "t", "u", "v", "w", "x", "y", "z"]
+                            extraLetters: []
                         }
                     ];
 
@@ -1429,9 +1669,9 @@ function updateProgress() {
         });
 
         // Service Worker Registration for PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-        navigator.serviceWorker.register('/lingua/sw.js').then(function (registration) {
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/lingua/sw.js').then(function (registration) {
                     console.log('ServiceWorker registration successful');
                 }).catch(function (err) {
                     console.log('ServiceWorker registration failed: ', err);
@@ -1442,20 +1682,6 @@ if ('serviceWorker' in navigator) {
         // Prevent context menu on long press (mobile)
         document.addEventListener('contextmenu', function (e) {
             e.preventDefault();
-        });
-
-        // Add haptic feedback for mobile
-        function vibrate(pattern = 50) {
-            if ('vibrate' in navigator) {
-                navigator.vibrate(pattern);
-            }
-        }
-
-        // Add vibration to button clicks
-        document.addEventListener('click', function (e) {
-            if (e.target.classList.contains('word-chip') || e.target.classList.contains('game-btn')) {
-                vibrate(30);
-            }
         });
 
         // Auto-save feature
