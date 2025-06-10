@@ -468,7 +468,7 @@
             }
 
             .nav-buttons {
-                flex-direction: column;
+                flex-direction: row;
             }
 
             .nav-btn {
@@ -533,7 +533,7 @@
             <button class="nav-btn active" onclick="showGame()">🎮 Jogar</button>
             <button class="nav-btn" onclick="showAdmin()">⚙️ Gerenciar</button>
         </div>
-
+        <div id="feedback" class="feedback" style="display: none;"></div>
         <div class="game-area">
             <!-- Área do Jogo -->
             <div id="gamePanel">
@@ -557,7 +557,7 @@
                     <button class="game-btn btn-next" onclick="startGame()">▶️ Iniciar Jogo</button>
                 </div>
 
-                <div id="feedback" class="feedback" style="display: none;"></div>
+                
             </div>
 
             <!-- Painel Administrativo -->
@@ -609,7 +609,7 @@
                     <input type="text" id="successMessage" placeholder="Ex: Parabéns! Você acertou!">
                 </div>
                 <label>
-                    <input type="checkbox" id="autoSpeak" checked> Falar áudio das frases
+                    <input type="checkbox" id="autoSpeak" checked> Falar áudio das frases?
                 </label>
 
                 <div class="form-group">
@@ -705,7 +705,7 @@
                 <input type="text" id="editSuccessMessage" placeholder="Ex: Parabéns! Você acertou!">
             </div>
             <label>
-                <input type="checkbox" id="editAutoSpeak"> Falar áudio das frases
+                <input type="checkbox" id="editAutoSpeak"> Falar áudio das frases?
             </label>
             <div class="form-group">
                 <label for="editErrorMessage"></label>
@@ -886,8 +886,6 @@
                 // Quando terminar de falar
                 utterance.onend = function () {
                     speechQueue--; // Decrementa contador
-                    console.log(`Fala terminada: "${text.substring(0, 30)}..." - Queue restante: ${speechQueue}`);
-                    console.log(`Texto completo falado: "${text}"`);
                     if (callback) {
                         setTimeout(callback, 100); // Pequeno delay para garantir
                     }
@@ -895,7 +893,6 @@
 
                 utterance.onerror = function (event) {
                     speechQueue--; // Decrementa contador mesmo com erro
-                    console.log(`Erro na fala: ${event.error} - Queue restante: ${speechQueue}`);
                     if (callback) {
                         setTimeout(callback, 100);
                     }
@@ -1107,7 +1104,6 @@
                             if (currentQuestion.answerLanguage) {
                                 setTimeout(() => {
                                     speakText(currentQuestion.answer, getLanguageCode(currentQuestion.answerLanguage), () => {
-                                        console.log('Resposta correta falada completamente');
                                     });
                                 }, 600); // Delay entre as falas
                             }
@@ -1131,7 +1127,6 @@
                             if (currentQuestion.answerLanguage) {
                                 setTimeout(() => {
                                     speakText(currentQuestion.answer, getLanguageCode(currentQuestion.answerLanguage), () => {
-                                        console.log('Resposta incorreta falada completamente');
                                     });
                                 }, 300);
                             }
@@ -1167,8 +1162,6 @@
         }
 
         function waitForSpeechToEnd(callback) {
-            console.log(`Verificando fala - Queue: ${speechQueue}, Speaking: ${speechSynthesis.speaking}`);
-
             // Verifica se ainda há falas pendentes ou se o speechSynthesis ainda está falando
             if (speechQueue > 0 || speechSynthesis.speaking) {
                 // Se ainda há falas pendentes, verifica novamente em 200ms
@@ -1177,14 +1170,11 @@
                 }, 200);
             } else {
                 // Aguarda mais tempo para garantir que todas as falas realmente terminaram
-                console.log('Falas parecem ter terminado, aguardando confirmação...');
                 setTimeout(() => {
                     // Verifica novamente após a pausa maior
                     if (speechQueue === 0 && !speechSynthesis.speaking) {
-                        console.log('Confirmado: todas as falas terminaram, avançando para próxima pergunta');
                         callback();
                     } else {
-                        console.log('Ainda há falas pendentes, continuando verificação...');
                         // Se ainda está falando, continua verificando
                         waitForSpeechToEnd(callback);
                     }
