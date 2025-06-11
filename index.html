@@ -458,6 +458,45 @@
             color: red;
         }
 
+        /*botao repetir pergunta*/
+        .repeat-audio-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            margin-left: 10px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            opacity: 0.7;
+        }
+
+        .repeat-audio-btn:hover {
+            background-color: rgba(76, 175, 80, 0.1);
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .repeat-audio-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Opcional: Estilo quando a fala global está desativada */
+        .repeat-audio-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .repeat-audio-btn.disabled:hover {
+            background-color: transparent;
+            transform: none;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -557,7 +596,7 @@
                     <button class="game-btn btn-next" onclick="startGame()">▶️ Iniciar Jogo</button>
                 </div>
 
-                
+
             </div>
 
             <!-- Painel Administrativo -->
@@ -606,7 +645,7 @@
                         <option value="francês">Francês</option>
                         <option value="italiano">Italiano</option>
                     </select>
-                    <input type="text" id="successMessage" placeholder="Ex: Parabéns! Você acertou!">
+                    <input type="text" id="successMessage" placeholder="Ex: Parabéns! Você acertou!" value="Certo!">
                 </div>
                 <label>
                     <input type="checkbox" id="autoSpeak" checked> Falar áudio das frases?
@@ -622,7 +661,7 @@
                         <option value="francês">Francês</option>
                         <option value="italiano">Italiano</option>
                     </select>
-                    <input type="text" id="errorMessage" placeholder="Ex: Errado, continue tentando!">
+                    <input type="text" id="errorMessage" placeholder="Ex: Errado, continue tentando!" value="Errou!">
                 </div>
 
                 <div class="form-group">
@@ -961,7 +1000,7 @@
             }
 
             // Se não há perguntas restantes, reiniciar com todas as perguntas
-            if (remainingQuestions.length === 0) {
+            if (remainingQuestions.length === 0 || currentQuestion === null) {
                 remainingQuestions = [...questions.map((q, index) => index)]; // Cria array com índices
                 shuffleArray(remainingQuestions); // Embaralha as perguntas
             }
@@ -976,7 +1015,8 @@
 
         function displayQuestion() {
             speechQueue = 0; // Reseta contador ao exibir nova pergunta
-            document.getElementById('questionText').textContent = currentQuestion.question;
+            document.getElementById('questionText').innerHTML =
+                ' <button class="repeat-audio-btn" onclick="repeatQuestion()" title="Repetir pergunta">🔊</button>' +' '+ currentQuestion.question;
             // Speak the question
             if (currentQuestion.questionLanguage) {
                 setTimeout(() => {
@@ -1022,6 +1062,19 @@
             // Update progress
             updateProgress();
             updateSpeechIndicator();
+        }
+        function repeatQuestion() {
+            if (currentQuestion && currentQuestion.questionLanguage) {
+                // Para qualquer fala em andamento antes de repetir
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+                }
+
+                // Fala a pergunta novamente
+                setTimeout(() => {
+                    speakText(currentQuestion.question, getLanguageCode(currentQuestion.questionLanguage));
+                }, 100);
+            }
         }
 
         function selectItem(item, chipElement) {
@@ -1105,7 +1158,7 @@
                                 setTimeout(() => {
                                     speakText(currentQuestion.answer, getLanguageCode(currentQuestion.answerLanguage), () => {
                                     });
-                                }, 600); // Delay entre as falas
+                                }, 300); // Delay entre as falas
                             }
                         });
                     }, 300);
@@ -1128,7 +1181,7 @@
                                 setTimeout(() => {
                                     speakText(currentQuestion.answer, getLanguageCode(currentQuestion.answerLanguage), () => {
                                     });
-                                }, 300);
+                                }, 300); // Delay entre as falas
                             }
                         });
                     }, 300);
@@ -1600,13 +1653,6 @@
             }
         });
 
-        // Touch Support for Mobile
-        document.addEventListener('touchstart', function (e) {
-            // Prevent zoom on double tap
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        });
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', function () {
@@ -1668,46 +1714,6 @@
                 });
             });
         }
-
-        // Prevent context menu on long press (mobile)
-        document.addEventListener('contextmenu', function (e) {
-            e.preventDefault();
-        });
-
-        // Auto-save feature
-        let autoSaveInterval;
-        function startAutoSave() {
-            autoSaveInterval = setInterval(() => {
-                saveStats();
-            }, 30000); // Save every 30 seconds
-        }
-
-        function stopAutoSave() {
-            if (autoSaveInterval) {
-                clearInterval(autoSaveInterval);
-            }
-        }
-
-        // Start auto-save when page loads
-        document.addEventListener('DOMContentLoaded', function () {
-            startAutoSave();
-        });
-
-        // Save before page unload
-        window.addEventListener('beforeunload', function () {
-            saveStats();
-            stopAutoSave();
-        });
-
-        // Add smooth scrolling for mobile
-        document.documentElement.style.scrollBehavior = 'smooth';
-
-        // Handle screen orientation changes
-        window.addEventListener('orientationchange', function () {
-            setTimeout(() => {
-                window.scrollTo(0, 0);
-            }, 100);
-        });
 
         // Add loading indicator
         function showLoading() {
