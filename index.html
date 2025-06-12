@@ -182,8 +182,8 @@
         .word-chip.letter {
             padding: 15px;
             border-radius: 50%;
-            width: 45px;
-            height: 30px;
+            width: 50px;
+            height: 50px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -543,6 +543,15 @@
             display: block;
         }
 
+        /* personalizar o botão das frases acerto e erro */
+        #toggleContainer {
+            display: none;
+            /* Oculta tudo inicialmente */
+            margin-top: 10px;
+        }
+
+
+
 
         @media (max-width: 768px) {
             .container {
@@ -571,7 +580,7 @@
 
             .word-chip {
                 padding: 10px 15px;
-                font-size: 0.8em;
+                font-size: 0.5em;
             }
 
             .game-buttons {
@@ -596,6 +605,20 @@
                 cursor: pointer;
                 font-size: 10px;
                 transition: background-color 0.3s;
+            }
+
+            .form-group label {
+                text-align: center;
+                display: block;
+                margin-bottom: 8px;
+                font-weight: bold;
+                color: #4a5568;
+            }
+
+            select {
+                font-size: 16px;
+                width: 100%;
+                text-align: center;
             }
         }
     </style>
@@ -660,14 +683,6 @@
 
             <!-- Painel Administrativo -->
             <div id="adminPanel" class="admin-panel">
-                <div class="file-buttons">
-                    <button class="nav-btn" onclick="document.getElementById('importFile').click()">📁 Importar</button>
-                    <button class="nav-btn" onclick="exportQuestions()">💾 Exportar</button>
-                    <button class="nav-btn" onclick="clearAllData()">🗑️ Limpar Tudo</button>
-                </div>
-
-                <input type="file" id="importFile" class="file-input" accept=".json" onchange="importQuestions(event)">
-
                 <div class="form-group">
                     <!-- <label for="questionInput">Pergunta:</label> -->
                     <label for="questionLanguage">Pergunta, Idioma da Pergunta:</label>
@@ -695,42 +710,12 @@
 
                 </div>
                 <div class="form-group">
-                    <label for="successMessage"></label>
-                    <label for="successLanguage">(opcional) Frase de Acerto, Idioma</label>
-                    <select id="successLanguage">
-                        <option value="português">Português</option>
-                        <option value="inglês">Inglês</option>
-                        <option value="espanhol">Espanhol</option>
-                        <option value="francês">Francês</option>
-                        <option value="italiano">Italiano</option>
-                    </select>
-                    <input type="text" id="successMessage" placeholder="Ex: Parabéns! Você acertou!" value="Certo!">
-                </div>
-                <label>
-                    <input type="checkbox" id="autoSpeak" checked> Falar áudio das frases?
-                </label>
-
-                <div class="form-group">
-                    <label for="errorMessage"></label>
-                    <label for="errorLanguage">(opcional) Frase de Erro, Idioma</label>
-                    <select id="errorLanguage">
-                        <option value="português">Português</option>
-                        <option value="inglês">Inglês</option>
-                        <option value="espanhol">Espanhol</option>
-                        <option value="francês">Francês</option>
-                        <option value="italiano">Italiano</option>
-                    </select>
-                    <input type="text" id="errorMessage" placeholder="Ex: Errado, continue tentando!" value="Errou!">
-                </div>
-
-                <div class="form-group">
                     <label for="gameType">Tipo de Jogo:</label>
                     <select id="gameType" onchange="toggleGameType()">
                         <option value="words">Palavras</option>
                         <option value="letters">Letras</option>
                     </select>
                 </div>
-
                 <div class="form-group" id="wordsGroup">
                     <label for="wordsInput">Palavras para escolha (separadas por vírgula):</label>
                     <textarea id="wordsInput" rows="3" placeholder="palavra1, palavra2, palavra3, ..."></textarea>
@@ -744,7 +729,46 @@
                         resposta aparecerão.</small>
                 </div>
 
+
+                <!-- Div única que envolve todo o conteúdo a ser ocultado -->
+                <div id="toggleContainer">
+                    <div class="form-group">
+                        <label for="successMessage"></label>
+                        <label for="successLanguage">(opcional) Frase de Acerto, Idioma</label>
+                        <select id="successLanguage">
+                            <option value="português">Português</option>
+                            <option value="inglês">Inglês</option>
+                            <option value="espanhol">Espanhol</option>
+                            <option value="francês">Francês</option>
+                            <option value="italiano">Italiano</option>
+                        </select>
+                        <input type="text" id="successMessage" placeholder="Ex: Parabéns! Você acertou!" value="Certo!">
+                    </div>
+
+                    <label>
+                        <input type="checkbox" id="autoSpeak" checked> Falar áudio das frases?
+                    </label>
+
+                    <div class="form-group">
+                        <label for="errorMessage"></label>
+                        <label for="errorLanguage">(opcional) Frase de Erro, Idioma</label>
+                        <select id="errorLanguage">
+                            <option value="português">Português</option>
+                            <option value="inglês">Inglês</option>
+                            <option value="espanhol">Espanhol</option>
+                            <option value="francês">Francês</option>
+                            <option value="italiano">Italiano</option>
+                        </select>
+                        <input type="text" id="errorMessage" placeholder="Ex: Errado, continue tentando!"
+                            value="Errou!">
+                    </div>
+                </div>
+
+
+
                 <div class="game-buttons">
+                    <!-- Botão para expandir/ocultar -->
+                    <button class="game-btn btn-check" id="toggleBtn">Mostrar Outras Opções</button>
                     <button class="game-btn btn-check" onclick="addQuestion()">➕ Adicionar</button>
                     <button class="game-btn btn-clear" onclick="clearForm()">🧹 Limpar Campos</button>
                 </div>
@@ -758,6 +782,13 @@
                     </div>
                     <div class="questions-list" id="questionsList"></div>
                 </div>
+                <div class="file-buttons">
+                    <button class="nav-btn" onclick="document.getElementById('importFile').click()">📁 Importar</button>
+                    <button class="nav-btn" onclick="exportQuestions()">💾 Exportar</button>
+                    <button class="nav-btn" onclick="clearAllData()">🗑️ Limpar Tudo</button>
+                </div>
+
+                <input type="file" id="importFile" class="file-input" accept=".json" onchange="importQuestions(event)">
             </div>
         </div>
     </div>
@@ -1206,7 +1237,7 @@
 
             if (userAnswer === correctAnswer) {
                 const successMsg = currentQuestion.successMessage || ' Correto! Muito bem!';
-                feedbackEl.textContent = successMsg;
+                feedbackEl.textContent = `✔️ ${successMsg}: "${currentQuestion.answer}"`;
                 feedbackEl.className = 'feedback correct';
                 answerArea.className = 'answer-area correct';
                 gameStats.correctAnswers++;
@@ -1382,18 +1413,8 @@
                 questionObj.extraLetters = extraLetters;
             } else {
                 const wordsInput = document.getElementById('wordsInput').value.trim();
-
-                if (!wordsInput) {
-                    alert('Por favor, adicione palavras para escolha!');
-                    return;
-                }
-
-                const words = wordsInput.split(',').map(word => word.trim()).filter(word => word);
-
-                if (words.length < 2) {
-                    alert('Adicione pelo menos 2 palavras para escolha!');
-                    return;
-                }
+                const words = wordsInput ?
+                    wordsInput.split(',').map(word => word.trim()).filter(word => word) : [];
 
                 // Add answer words to word bank if not present
                 const answerWords = answer.split(' ').filter(word => word.trim());
@@ -1536,18 +1557,8 @@
                 questionData.extraLetters = extraLetters;
             } else {
                 const wordsInput = document.getElementById('editWords').value.trim();
-
-                if (!wordsInput) {
-                    alert('Por favor, adicione palavras para escolha!');
-                    return;
-                }
-
-                const words = wordsInput.split(',').map(word => word.trim()).filter(word => word);
-
-                if (words.length < 2) {
-                    alert('Adicione pelo menos 2 palavras para escolha!');
-                    return;
-                }
+                const words = wordsInput ?
+                    wordsInput.split(',').map(word => word.trim()).filter(word => word) : [];
 
                 // Add answer words to word bank if not present
                 const answerWords = answer.split(' ').filter(word => word.trim());
@@ -1817,6 +1828,28 @@
             console.error('Unhandled promise rejection:', e.reason);
             alert('Erro de banco de dados. Verifique se o navegador suporta IndexedDB.');
         });
+        const toggleBtn = document.getElementById('toggleBtn');
+        const toggleContainer = document.getElementById('toggleContainer');
+
+        let visible = false;
+
+        toggleBtn.addEventListener('click', () => {
+            visible = !visible;
+            toggleContainer.style.display = visible ? 'block' : 'none';
+            toggleBtn.textContent = visible ? 'Ocultar Opções' : 'Mostrar Opções';
+        });
+        // Fecha o modal ao clicar fora do conteúdo
+        // Referência ao modal
+        const editModal = document.getElementById('editModal');
+
+        // Fecha ao clicar fora do conteúdo
+        window.addEventListener('click', function (event) {
+            if (editModal.classList.contains('active') && event.target === editModal) {
+                editModal.classList.remove('active');
+            }
+        });
+
+
     </script>
 </body>
 
